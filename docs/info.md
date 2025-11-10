@@ -23,7 +23,7 @@ This project implements a **Turing Machine** on an ASIC with the following featu
 
 ### Operating Modes
 
-![Operating Modes](modes.png)
+<img src="modes.png" alt="Operating Modes" width="400"/>
 
 The machine operates in 5 distinct modes:
 - **INIT**: Initial state after reset, loading configuration
@@ -119,7 +119,7 @@ Swap control: `ui_in[2]=1` swaps the outputs.
 - **DIP Switch**
   - Connect to `ui_in`
   - Allows manual control of all settings:
-    - Switch 7: Manual/Auto mode
+    - Switch 7: Config/Auto mode
     - Switches 6-5: Bank selection
     - Switch 4: Loop enable
     - Switch 3: Wrap enable
