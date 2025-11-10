@@ -23,7 +23,7 @@ This project implements a **Turing Machine** on an ASIC with the following featu
 
 ### Operating Modes
 
-<img src="modes.png" alt="Operating Modes" width="400"/>
+![Operating Modes](modes_small.png)
 
 The machine operates in 5 distinct modes:
 - **INIT**: Initial state after reset, loading configuration
