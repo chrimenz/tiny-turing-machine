@@ -6,7 +6,7 @@ SIM ?= icarus
 WAVES ?= 1
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tinyturingmachine.v
+PROJECT_SOURCES = project.v
 
 ifneq ($(GATES),yes)
 

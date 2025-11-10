@@ -399,4 +399,6 @@ module tt_um_chrimenz_tinyturing (
         end
     end
 
+    wire _unused = &{ena, uio_in[7:0], 1'b0};
+
 endmodule
