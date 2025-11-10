@@ -9,12 +9,12 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-Explain how your project works
+This project implements a tiny turing machine...
 
 ## How to test
 
-Explain how to use your project
+A quick test can be performed by setting all inputs to zero and clock slowly or manually. 
 
 ## External hardware
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+To visualize the tape, a PMOD with eight leds in a row could be helpful. 
