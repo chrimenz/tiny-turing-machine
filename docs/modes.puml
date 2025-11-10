@@ -1,0 +1,46 @@
+@startuml Tiny Turing Machine - State Diagram
+
+skinparam state {
+  BackgroundColor<<init>> LightBlue
+  BackgroundColor<<run>> LightGreen
+  BackgroundColor<<halt>> Orange
+}
+
+[*] -[dashed]-> INIT_STT : clk,~rst_n,\nui_in[7]=1
+[*] -[dashed]-> INIT_TAPE : clk,~rst_n,\nui_in[7]=0,\nui_in[1]=1
+[*] -[dashed]-> RUN : clk,~rst_n,\nui_in[7]=0,\nui_in[1]=0
+
+state INIT_STT <<init>> : Write STT entries\nui_in[7]=1: write\nui_in[6:4]=addr\nui_in[3:0]=data
+
+state INIT_TAPE <<init>> : Set tape\nui_in[7:0]→tape
+
+state INIT_HEAD <<init>> : Set head & state\nui_in[4:3]→state\nui_in[2:0]→headpos
+
+state RUN <<run>> : Execute TM\nRead→Lookup→Write→Move\nui_in[6:5]=bank\nui_in[3]=wrap
+
+state HALT <<halt>> : Stopped\nui_in[4]=loop
+
+INIT_STT --> INIT_STT : clk, ui_in[7]=1
+INIT_STT --> INIT_TAPE : clk, ui_in[7]=0
+
+INIT_TAPE --> INIT_HEAD : clk
+
+INIT_HEAD --> RUN : clk
+
+RUN --> RUN : clk
+RUN --> HALT : clk, boundary\n&& !wrap
+
+HALT --> HALT : clk, !loop
+HALT --> RUN : clk, loop
+
+note left of INIT_HEAD
+  **Tape Convention:**
+  tape[7] = LEFT, 
+  tape[0] = RIGHT
+  headpos=0 → tape[7] (leftmost)
+  headpos=7 → tape[0] (rightmost)
+  MOVE_LEFT: headpos--, 
+  MOVE_RIGHT: headpos++
+end note
+
+@enduml

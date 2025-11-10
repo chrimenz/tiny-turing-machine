@@ -3,9 +3,9 @@
  * 
  * Features:
  * - 8-bit tape with configurable wrap-around
- * - 4 states, binary alphabet
+ * - 4 states, unary alphabet ([_](0), [1](1))
  * - 4 STT banks (3 presets + 1 custom)
- * - Manual STT configuration
+ * - Custom STT configuration
  * - Loop mode with auto-restart
  * - Flexible output routing
  * 
@@ -35,9 +35,9 @@ module tt_um_chrimenz_tinyturing (
     localparam ALPHABET_WIDTH = 1;
     localparam MOVE_DIR_WIDTH = 1;
     
-    localparam STT_ADDR_WIDTH = STATE_WIDTH + ALPHABET_WIDTH; // 3 bits (0-7)
-    localparam STT_DATA_WIDTH = STATE_WIDTH + ALPHABET_WIDTH + MOVE_DIR_WIDTH; // 4 bits
-    localparam STT_LEN = 1 << STT_ADDR_WIDTH; // 8 entries
+    localparam STT_ADDR_WIDTH = STATE_WIDTH + ALPHABET_WIDTH; 
+    localparam STT_DATA_WIDTH = STATE_WIDTH + ALPHABET_WIDTH + MOVE_DIR_WIDTH;
+    localparam STT_LEN = 1 << STT_ADDR_WIDTH; 
     localparam STT_NUM_BANKS = 4;
 
     // Move directions
@@ -59,12 +59,11 @@ module tt_um_chrimenz_tinyturing (
     
     // Preset 0: Unary Incrementer
     // Adds 1 to a unary number (string of 1s)
-    // State 0: Scan right until 0, State 1: Write 1 and halt
     localparam [STT_DATA_WIDTH*STT_LEN-1:0] STT_PRESET_0 = {
-        4'b0001,  // [0] S0,0 → S0,0,R (blank,continue right)
-        4'b0111,  // [1] S0,1 → S1,1,R (1, write 1, go right)
-        4'b0011,  // [2] S1,0 → S0,1,R (found blank, write 1, go right)
-        4'b0111,  // [3] S1,1 → S1,1,R (try to find blank, continue)
+        4'b0001,  // [0] S0,0 → S0,0,R (find starting 1)
+        4'b0111,  // [1] S0,1 → S1,1,R (found 1 -> S1)
+        4'b0011,  // [2] S1,0 → S0,1,R (found blank, write 1, -> S0)
+        4'b0111,  // [3] S1,1 → S1,1,R (find blank)
         4'b0000,  // [4] S2,0 → (unused)
         4'b0000,  // [5] S2,1 → (unused)
         4'b0000,  // [6] S3,0 → (unused)
@@ -76,39 +75,39 @@ module tt_um_chrimenz_tinyturing (
     localparam [STT_DATA_WIDTH*STT_LEN-1:0] STT_PRESET_1 = {
         4'b0011,  // [0] S0,0 → S0,1,R (flip 0→1, go right)
         4'b0001,  // [1] S0,1 → S0,0,R (flip 1→0, go right)
-        4'b0000,  // [2] S1,0 → S0,1,R (found blank, write 1, go right)
-        4'b0000,  // [3] S1,1 → S1,1,R (try to find blank, continue)
+        4'b0000,  // [2] S1,0 → (unused)
+        4'b0000,  // [3] S1,1 → (unused)
         4'b0000,  // [4] S2,0 → (unused)
         4'b0000,  // [5] S2,1 → (unused)
         4'b0000,  // [6] S3,0 → (unused)
         4'b0000   // [7] S3,1 → (unused)
     };
     
-    // Preset 2: Wally
+    // Preset 2: Wall-E
     // go right until a 1 is found, change it to 0, go left until a one is found, place a 1 right of it, repeat
     localparam [STT_DATA_WIDTH*STT_LEN-1:0] STT_PRESET_2 = {
-        4'b0001,  // [7] S0,1 → S2,0,R (write 0, switch state) search for next 1
-        4'b0100,  // [6] S0,0 → S1,1,R (write 1, switch state) found a 1 turn around
-        4'b0100,  // [5] S1,1 → S2,0,R (write 0, switch state) found zero
-        4'b1011,  // [4] S1,0 → S1,1,R (write 1, stay)
-        4'b0011,  // [3] S2,1 → S1,1,R (write 1, switch state)
-        4'b1011,  // [2] S2,0 → S2,0,R (write 0, stay)
-        4'b0000,  // [1] S3,1 → (unused)
-        4'b0000   // [0] S3,0 → (unused)
+        4'b0001,  // [7] S0,0 → S0,0,R (search for next 1)
+        4'b0100,  // [6] S0,1 → S1,0,L (found 1, write 0, move left, -> S1) 
+        4'b0100,  // [5] S1,0 → S1,0,L (keep moving left)
+        4'b1011,  // [4] S1,1 → S2,1,R (found 1, move right, -> S2)
+        4'b0011,  // [3] S2,0 → S0,1,R (write 1, -> S0)
+        4'b1011,  // [2] S2,1 → S2,0,R (should not happen)
+        4'b0000,  // [1] S3,0 → (unused)
+        4'b0000   // [0] S3,1 → (unused)
     };
 
     // Preset initial tapes
     // Tape convention: Bit 7 = LEFT, Bit 0 = RIGHT
     // Visual display: [7][6][5][4][3][2][1][0]
     // Head position: 0=leftmost, 7=rightmost
-    localparam [TAPE_SIZE-1:0] PRESET_TAPE_0 = 8'b11100000; // Three 1s on the LEFT (bit positions 7,6,5)
-    localparam [TAPE_SIZE-1:0] PRESET_TAPE_1 = 8'b01011010; // Binary 15 on the LEFT (bit positions 7-4)
+    localparam [TAPE_SIZE-1:0] PRESET_TAPE_0 = 8'b11100000; // Three 1s on the LEFT 
+    localparam [TAPE_SIZE-1:0] PRESET_TAPE_1 = 8'b01011010; // arbitrary pattern for bit-flip
     localparam [TAPE_SIZE-1:0] PRESET_TAPE_2 = 8'b10001011; // Blank for pattern
 
     // Preset initial positions
     localparam [HEAD_POS_WIDTH-1:0] PRESET_HEAD_0 = 3'd0; // Start at leftmost (position 0, bit 7)
-    localparam [HEAD_POS_WIDTH-1:0] PRESET_HEAD_1 = 3'd0; // Start at rightmost for counter (position 7, bit 0)
-    localparam [HEAD_POS_WIDTH-1:0] PRESET_HEAD_2 = 3'd2; // Start at leftmost (position 0, bit 7)
+    localparam [HEAD_POS_WIDTH-1:0] PRESET_HEAD_1 = 3'd0; // Start at leftmost (position 0, bit 7)
+    localparam [HEAD_POS_WIDTH-1:0] PRESET_HEAD_2 = 3'd2; // Start at position 2, bit 5)
 
     // Preset initial states
     localparam [STATE_WIDTH-1:0] PRESET_STATE_0 = 2'd0;
@@ -145,7 +144,6 @@ module tt_um_chrimenz_tinyturing (
     // Head position 7 = rightmost = bit 0
     
     wire [2:0] tape_bit_index;
-    assign tape_bit_index = 3'd7 - headpos;  // Invert: pos 0→bit7, pos 7→bit0
 
     // ========================================================================
     // STT Lookup Wires
@@ -159,12 +157,29 @@ module tt_um_chrimenz_tinyturing (
     wire move_dir;
     wire current_symbol;
 
-    // Select STT bank based on mode and ui_in
+    // ========================================================================
+    // Output Routing Wires
+    // ========================================================================
+    
+    wire output_swap;
+    wire [7:0] decoded_headpos;
+    wire [7:0] status;
+    wire [7:0] uio_output;
+    wire [7:0] uo_output;
+
+    // ========================================================================
+    // Wire Assignments
+    // ========================================================================
+    
+    // Tape bit index mapping
+    assign tape_bit_index = 3'd7 - headpos;  // Invert: pos 0→bit7, pos 7→bit0
+    
+    // STT bank selection
     assign stt_bank_sel = (mode == MODE_INIT_STT) ? 2'd3 : 
                           (mode == MODE_RUN || mode == MODE_HALT) ? ui_in[6:5] : 
                           initial_bank;
     
-    // Build STT address from current state and symbol
+    // STT lookup
     assign current_symbol = tape[tape_bit_index];
     assign stt_addr = {state, current_symbol};
     assign stt_entry = stt_mem[stt_addr][stt_bank_sel];
@@ -174,25 +189,32 @@ module tt_um_chrimenz_tinyturing (
     assign write_symbol = stt_entry[1];
     assign move_dir = stt_entry[0];
 
-    // ========================================================================
-    // Output Routing (Combinational)
-    // ========================================================================
-    
-    wire output_swap;
+    // Output routing
     assign output_swap = (mode == MODE_RUN || mode == MODE_HALT) ? ui_in[2] : 1'b0;
-
-    // Status signals
-    wire [2:0] status_headpos;
-    wire [1:0] status_state;
-    wire [2:0] status_mode;
     
-    assign status_headpos = headpos;
-    assign status_state = state;
-    assign status_mode = mode;
-
-    // Output multiplexing based on swap bit
-    assign uo_out = output_swap ? {status_mode, status_state, status_headpos} : tape;
-    assign uio_out = output_swap ? tape : {status_mode, status_state, status_headpos};
+    // Decoded head position (one-hot encoding)
+    // headpos 0 → bit 7 (leftmost), headpos 7 → bit 0 (rightmost)
+    assign decoded_headpos = (headpos == 3'd0) ? 8'b10000000 :
+                             (headpos == 3'd1) ? 8'b01000000 :
+                             (headpos == 3'd2) ? 8'b00100000 :
+                             (headpos == 3'd3) ? 8'b00010000 :
+                             (headpos == 3'd4) ? 8'b00001000 :
+                             (headpos == 3'd5) ? 8'b00000100 :
+                             (headpos == 3'd6) ? 8'b00000010 :
+                                                  8'b00000001;  // headpos 7
+    
+    // Status encoding: {mode[2:0], state[1:0], headpos[2:0]}
+    assign status = {mode, state, headpos};
+    
+    // UIO output selection based on ui_in[0]
+    // ui_in[0]=1: status, ui_in[0]=0: decoded_headpos
+    assign uio_output = ui_in[0] ? decoded_headpos : status;
+    
+    // Output multiplexing based on swap bit (ui_in[2])
+    // swap=0: uo=tape, uio=status/decoded
+    // swap=1: uo=status/decoded, uio=tape
+    assign uo_out = output_swap ? uio_output : tape;
+    assign uio_out = output_swap ? tape : uio_output;
     
     // UIO pins always configured as outputs
     assign uio_oe = 8'hFF;
